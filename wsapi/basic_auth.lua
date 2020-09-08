@@ -41,6 +41,16 @@ local base64 = require("base64")
 function run(wsapi_env, realm, run_fn, check_fn, ...)
    local req = request.new(wsapi_env)
    local http_authorization = req.env["HTTP_AUTHORIZATION"]
+
+   local function auth_failed()
+      local res = response.new()
+      res.headers["WWW-Authenticate"] = "Basic realm="..realm
+      res.status = 401
+      res:write("<html><head><title>401 Authorization Required</title></head>\n")
+      res:write("<body><center><h1>401 Authorization Required</h1></body></html>\n")
+      return res:finish()
+   end
+
    if http_authorization then
       local scheme, credential = http_authorization:match("(%S+)%s(%S+)")
       if scheme and credential then
@@ -50,18 +60,13 @@ function run(wsapi_env, realm, run_fn, check_fn, ...)
             if check_fn(user, password, ...) then
                return run_fn(wsapi_env)
             else
-               local res = response.new()
-               res.status = 403
-               return res:finish()
+               return auth_failed()
             end
          else
             return run_fn(wsapi_env)
          end
       end
    end
-   local res = response.new()
-   res.headers["WWW-Authenticate"] = "Basic realm="..realm
-   res.status = 401
-   return res:finish()
+   return auth_failed()
 end
 
