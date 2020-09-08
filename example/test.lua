@@ -27,6 +27,7 @@ function my_run(wsapi_env)
 	end
   
   local function handler()
+    local poke = wsapi_env.REMOTE_ADDR -- poke REMOTE_ADDR to show in table
 	coroutine.yield(table_tostring(wsapi_env))
   end
   return 200, headers, coroutine.wrap(handler)
